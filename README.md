@@ -169,9 +169,8 @@ Mix and match per conversation or per project.
 ### Install
 
 ```bash
-git clone https://github.com/philipecomputacao/free-claude-code-plus.git \
-    ~/Projetos/projetos/free-claude-code-plus
-cd ~/Projetos/projetos/free-claude-code-plus
+git clone https://github.com/philipecomputacao/free-claude-code-plus.git
+cd free-claude-code-plus
 
 # Install as a uv tool (creates `fcc-server` and `fcc` commands)
 uv tool install .
@@ -531,7 +530,7 @@ detects divergence and opens a tracking issue; **nothing is auto-merged**.
 To sync manually:
 
 ```bash
-cd ~/Projetos/projetos/free-claude-code-plus
+cd ~/free-claude-code-plus
 
 # Fetch upstream
 git fetch upstream
