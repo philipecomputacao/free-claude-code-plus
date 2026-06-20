@@ -14,6 +14,22 @@
 ![python](https://img.shields.io/badge/python-3.14%2B-blueviolet.svg)
 ![providers](https://img.shields.io/badge/providers-18-orange.svg)
 ![fork](https://img.shields.io/badge/fork-Alishahryar1%2Ffree--claude--code-blue.svg)
+[![Maintained by @lpdigital.me](https://img.shields.io/badge/maintained%20by-%40lpdigital.me-E4405F.svg)](https://www.instagram.com/lpdigital.me/)
+
+---
+
+<table>
+<tr>
+<td width="120" align="center" valign="top">
+<a href="https://www.instagram.com/lpdigital.me/"><img src="https://raw.githubusercontent.com/philipecomputacao/inventario-apis-gratuitas/main/assets/perfil-300.jpg" width="100" height="100" alt="@lpdigital.me" style="border-radius: 50%;" /></a>
+</td>
+<td valign="top">
+
+**Fork mantido por [@lpdigital.me](https://www.instagram.com/lpdigital.me/)** — Philipe compartilha plugins, automações e IA toda semana no Instagram. Manda um follow se o proxy te ajudou.
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -585,3 +601,5 @@ upstreamed. To prepare a PR:
 ## License
 
 MIT — same as upstream. See [LICENSE](LICENSE).
+
+Fork mantido por **[@lpdigital.me](https://www.instagram.com/lpdigital.me/)**.
