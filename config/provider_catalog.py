@@ -36,6 +36,9 @@ ZAI_DEFAULT_BASE = "https://api.z.ai/api/anthropic/v1"
 GEMINI_DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/"
 GROQ_DEFAULT_BASE = "https://api.groq.com/openai/v1"
 CEREBRAS_DEFAULT_BASE = "https://api.cerebras.ai/v1"
+# MiniMax Anthropic-compatible Messages API (Token Plan + pay-as-you-go).
+# See https://platform.minimax.io/docs/guides/quickstart
+MINIMAX_DEFAULT_BASE = "https://api.minimax.io/anthropic"
 
 
 @dataclass(frozen=True, slots=True)
@@ -244,6 +247,23 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
             "thinking",
             "native_anthropic",
             "local",
+        ),
+    ),
+    "minimax": ProviderDescriptor(
+        provider_id="minimax",
+        transport_type="anthropic_messages",
+        credential_env="MINIMAX_API_KEY",
+        credential_url="https://platform.minimax.io/user-center/basic-information/interface-key",
+        credential_attr="minimax_api_key",
+        default_base_url=MINIMAX_DEFAULT_BASE,
+        proxy_attr="minimax_proxy",
+        capabilities=(
+            "chat",
+            "streaming",
+            "tools",
+            "thinking",
+            "native_anthropic",
+            "rate_limit",
         ),
     ),
 }

@@ -252,6 +252,19 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
         ),
     ),
     ConfigFieldSpec(
+        "MINIMAX_API_KEY",
+        "MiniMax API Key",
+        "providers",
+        "secret",
+        settings_attr="minimax_api_key",
+        secret=True,
+        description=(
+            "MiniMax Token Plan subscription key or pay-as-you-go API key "
+            "(create in [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key)). "
+            "Routes Anthropic-compatible Messages to https://api.minimax.io/anthropic."
+        ),
+    ),
+    ConfigFieldSpec(
         "LM_STUDIO_BASE_URL",
         "LM Studio Base URL",
         "providers",
@@ -404,6 +417,15 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
         "providers",
         "secret",
         settings_attr="cerebras_proxy",
+        secret=True,
+        advanced=True,
+    ),
+    ConfigFieldSpec(
+        "MINIMAX_PROXY",
+        "MiniMax Proxy",
+        "providers",
+        "secret",
+        settings_attr="minimax_proxy",
         secret=True,
         advanced=True,
     ),

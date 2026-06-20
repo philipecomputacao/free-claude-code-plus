@@ -71,6 +71,7 @@ function providerName(providerId) {
     opencode: "OpenCode Zen",
     opencode_go: "OpenCode Go",
     zai: "Z.ai",
+    minimax: "MiniMax",
   };
   if (names[providerId]) return names[providerId];
   return providerId
