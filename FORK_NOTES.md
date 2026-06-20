@@ -50,6 +50,29 @@ git checkout feat/provider-minimax && git rebase main
 3. Adicionar teste em `tests/providers/test_minimax.py` seguindo padrão do Kimi/DeepSeek.
 4. Atualizar `README.md` upstream (criar PR separado — upstream não aceita PR de README).
 
+## Sincronização automática com upstream
+
+GitHub Action em `.github/workflows/upstream-sync.yml` roda toda segunda
+9h BRT (12:00 UTC) e abre uma issue quando detecta divergência entre
+`main` deste fork e `main` do upstream. Issues existentes com label
+`upstream-sync` recebem comentário de update em vez de duplicar.
+
+Disparo manual: aba **Actions → Upstream sync check → Run workflow**.
+
+Para sincronizar quando a issue abrir:
+
+```bash
+cd ~/Projetos/projetos/free-claude-code-minimax
+git fetch upstream
+git checkout main && git merge upstream/main
+git checkout feat/provider-minimax && git rebase main
+# resolver conflitos se houver (locais comuns: api/admin_config.py, config/provider_catalog.py)
+uv tool install --reinstall .
+pkill -f fcc-server; sleep 2; nohup fcc-server > ~/.fcc/server.log 2>&1 &
+```
+
+Após sincronizar, feche a issue manualmente.
+
 ## Segredos
 
 - Subscription Key do Token Plan é pessoal. Nunca commitar `~/.fcc/.env`.

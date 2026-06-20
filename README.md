@@ -170,6 +170,14 @@ estiver atrasada, o slug exato funciona se o provider estiver autenticado.
 - [ ] Adicionar teste de smoke no diretório `tests/providers/test_minimax.py`.
 - [ ] Validar com `./scripts/ci.sh` antes do PR.
 
+## Sincronização com upstream
+
+GitHub Action `.github/workflows/upstream-sync.yml` detecta divergência entre
+este fork e `Alishahryar1/free-claude-code` automaticamente toda segunda
+9h BRT. Quando o upstream tem commits novos, abre uma issue com label
+`upstream-sync` listando os commits e os comandos de sync. Para detalhes,
+veja `FORK_NOTES.md`.
+
 ## Referências
 
 - [free-claude-code upstream](https://github.com/Alishahryar1/free-claude-code)
