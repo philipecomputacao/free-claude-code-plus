@@ -1,0 +1,41 @@
+# ── Upstream (free-claude-code) ─────────────────────────────────────────────
+__pycache__
+.claude
+.cursor
+.pytest_cache
+.ruff_cache
+.serena
+.venv
+agent_workspace
+.env
+/logs/
+server.log
+/server.*.log
+debug-*.log
+.coverage
+llama_cache
+.smoke-results
+.vscode
+
+# ── macOS + Google Drive sync (padrão central) ──────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+desktop.ini
+.tmp.drivedownload/
+.tmp.driveupload/
+Icon?
+
+# ── Python extras ──────────────────────────────────────────────────────────
+*.py[cod]
+*$py.class
+*.egg-info/
+.mypy_cache/
+
+# ── Editor extras ──────────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*~
