@@ -261,7 +261,7 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
         description=(
             "MiniMax Token Plan subscription key or pay-as-you-go API key "
             "(create in [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key)). "
-            "Routes Anthropic-compatible Messages to https://api.minimax.io/anthropic."
+            "Routes Anthropic-compatible Messages to https://api.minimax.io/anthropic/v1."
         ),
     ),
     ConfigFieldSpec(

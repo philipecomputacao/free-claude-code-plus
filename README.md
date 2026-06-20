@@ -11,7 +11,7 @@ ou misturando com outros providers (NVIDIA NIM, OpenCode Zen, etc.).
 
 O `free-claude-code` upstream ainda não tem provider MiniMax nativo. Este fork
 adiciona suporte oficial baseado na [documentação MiniMax](https://platform.minimax.io/docs/guides/quickstart),
-usando o endpoint Anthropic-compat (`https://api.minimax.io/anthropic`).
+usando o endpoint Anthropic-compat (`https://api.minimax.io/anthropic/v1`).
 
 ## Mudanças em relação ao upstream
 

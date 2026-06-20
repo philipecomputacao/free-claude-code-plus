@@ -17,7 +17,7 @@ _MINIMAX_OPENAI_MODELS_URL = "https://api.minimax.io/v1/models"
 
 
 class MiniMaxProvider(AnthropicMessagesTransport):
-    """MiniMax using ``https://api.minimax.io/anthropic`` (Anthropic Messages API).
+    """MiniMax using ``https://api.minimax.io/anthropic/v1`` (Anthropic Messages API).
 
     Supports the MiniMax Token Plan subscription key. See
     https://platform.minimax.io/docs/guides/quickstart for both the

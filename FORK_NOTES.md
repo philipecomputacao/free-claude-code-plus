@@ -14,7 +14,7 @@ autoritativos para padrões de código, versionamento e CI.
 
 - `providers/minimax/__init__.py` — entry point
 - `providers/minimax/client.py` — `MiniMaxProvider(AnthropicMessagesTransport)`
-- Endpoint: `https://api.minimax.io/anthropic` (Anthropic-compat)
+- Endpoint: `https://api.minimax.io/anthropic/v1` (Anthropic-compat)
 - Header de auth: `x-api-key: ${MINIMAX_API_KEY}` (mesmo padrão do DeepSeek)
 - Listagem: `https://api.minimax.io/v1/models` (OpenAI-compat root)
 
