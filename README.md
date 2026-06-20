@@ -1,4 +1,4 @@
-# free-claude-code-minimax
+# free-claude-code-plus
 
 > **A community fork of [Alishahryar1/free-claude-code][upstream] that adds first-class
 > support for the [MiniMax Token Plan][minimax-docs] as an LLM provider.**
@@ -153,9 +153,9 @@ Mix and match per conversation or per project.
 ### Install
 
 ```bash
-git clone https://github.com/philipecomputacao/free-claude-code-minimax.git \
-    ~/Projetos/projetos/free-claude-code-minimax
-cd ~/Projetos/projetos/free-claude-code-minimax
+git clone https://github.com/philipecomputacao/free-claude-code-plus.git \
+    ~/Projetos/projetos/free-claude-code-plus
+cd ~/Projetos/projetos/free-claude-code-plus
 
 # Install as a uv tool (creates `fcc-server` and `fcc` commands)
 uv tool install .
@@ -447,8 +447,8 @@ see [Contributing back](#contributing-back-to-upstream).
 
 ```bash
 # Clone
-git clone https://github.com/philipecomputacao/free-claude-code-minimax.git
-cd free-claude-code-minimax
+git clone https://github.com/philipecomputacao/free-claude-code-plus.git
+cd free-claude-code-plus
 
 # Install in editable mode
 uv tool install --editable .
@@ -515,7 +515,7 @@ detects divergence and opens a tracking issue; **nothing is auto-merged**.
 To sync manually:
 
 ```bash
-cd ~/Projetos/projetos/free-claude-code-minimax
+cd ~/Projetos/projetos/free-claude-code-plus
 
 # Fetch upstream
 git fetch upstream

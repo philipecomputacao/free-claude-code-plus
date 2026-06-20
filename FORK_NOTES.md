@@ -8,7 +8,7 @@ autoritativos para padrões de código, versionamento e CI.
 
 - `main` — espelha upstream, recebe merges via `git pull upstream main`.
 - `feat/provider-minimax` — branch ativa com provider MiniMax (este PR).
-- `~/.git-repos/free-claude-code-minimax/` — `.git` real, fora do Drive sync.
+- `~/.git-repos/free-claude-code-plus/` — `.git` real, fora do Drive sync.
 
 ## Provider MiniMax (este fork adiciona)
 
@@ -22,7 +22,7 @@ autoritativos para padrões de código, versionamento e CI.
 
 ```bash
 # Reinstalar tool após mudanças no source
-cd ~/Projetos/projetos/free-claude-code-minimax
+cd ~/Projetos/projetos/free-claude-code-plus
 uv tool install --reinstall .
 
 # Reiniciar server
@@ -37,7 +37,7 @@ curl -s -X POST http://127.0.0.1:8082/admin/api/providers/minimax/test \
   -H "Content-Type: application/json" -d '{}' | python3 -m json.tool
 
 # Atualizar do upstream (rebase manual)
-cd ~/Projetos/projetos/free-claude-code-minimax
+cd ~/Projetos/projetos/free-claude-code-plus
 git fetch upstream
 git checkout main && git merge upstream/main
 git checkout feat/provider-minimax && git rebase main
@@ -62,7 +62,7 @@ Disparo manual: aba **Actions → Upstream sync check → Run workflow**.
 Para sincronizar quando a issue abrir:
 
 ```bash
-cd ~/Projetos/projetos/free-claude-code-minimax
+cd ~/Projetos/projetos/free-claude-code-plus
 git fetch upstream
 git checkout main && git merge upstream/main
 git checkout feat/provider-minimax && git rebase main
