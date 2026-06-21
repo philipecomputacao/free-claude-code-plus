@@ -88,6 +88,7 @@ All of that is in this fork. The bug fix alone is non-trivial to discover
 - [What you get](#what-you-get)
 - [Quick start](#quick-start)
 - [Supported providers](#supported-providers)
+- [Model visibility control](#model-visibility-control)
 - [MiniMax provider in depth](#minimax-provider-in-depth)
 - [Bug fix: missing /v1 suffix](#bug-fix-missing-v1-suffix)
 - [Architecture](#architecture)
@@ -152,7 +153,9 @@ Then the model id routes through fcc-server:
 | `lmstudio/...` | LM Studio (local) |
 | `wafer/...` | Wafer (experimental) |
 
-Mix and match per conversation or per project.
+Mix and match per conversation or per project. Use `DISABLED_PROVIDERS` and
+`HIDDEN_MODELS` (or the Admin UI's model visibility panel) to control which
+models appear in the `/model` picker.
 
 ---
 
@@ -203,6 +206,10 @@ DEEPSEEK_API_KEY=sk-...
 MISTRAL_API_KEY=ms-...
 GROQ_API_KEY=gsk_...
 # ...etc
+
+# Model visibility (optional — see "Model visibility control")
+# DISABLED_PROVIDERS=open_router,ollama
+# HIDDEN_MODELS=deepseek/deepseek-reasoner,minimax/MiniMax-M2
 ```
 
 ### Run
@@ -256,7 +263,9 @@ Expected output: `"Oi!"` (or similar, in Portuguese).
 ### Admin UI
 
 Open <http://127.0.0.1:8082/admin> in your browser. You'll see the provider
-catalogue, a button to test each provider, and env-var fields. The MiniMax
+catalogue, a button to test each provider, env-var fields, and a
+**model visibility selector** to toggle individual LLMs on/off per provider
+(see [Model visibility control](#model-visibility-control)). The MiniMax
 entry was added in this fork.
 
 ---
@@ -287,6 +296,53 @@ entry was added in this fork.
 `free / paid` means the provider has a free tier with rate limits and a paid
 tier. The Admin UI shows the current balance for paid providers that expose
 a balance API.
+
+---
+
+## Model visibility control
+
+By default, every model discovered by a configured provider is listed in
+`/v1/models` (and therefore visible in Claude Code's `/model` selector).
+Two env vars let you filter the list without removing provider keys:
+
+### `DISABLED_PROVIDERS`
+
+Comma-separated list of provider IDs to hide entirely from the model listing.
+The provider remains functional for routing — if another tool or config
+references a model from a disabled provider, requests still go through.
+Only the **listing** is affected.
+
+```bash
+# Hide all OpenRouter and Ollama models from the model picker
+DISABLED_PROVIDERS=open_router,ollama
+```
+
+### `HIDDEN_MODELS`
+
+Comma-separated denylist of individual model refs (`provider_id/model_name`)
+to hide from the listing. Everything not listed stays visible. Empty = show all.
+
+```bash
+# Hide specific models you don't use
+HIDDEN_MODELS=deepseek/deepseek-reasoner,minimax/MiniMax-M2,minimax/MiniMax-M2.1
+```
+
+### Admin UI: model visibility selector
+
+The Admin UI (`/admin`) includes a **Modelos visíveis** panel in the Model
+Config view. It shows all discovered models grouped by provider, with
+checkboxes to toggle individual models on/off. Features:
+
+- **Search**: filter models by name across all providers
+- **Per-provider toggle**: "Marcar todos" / "Desmarcar todos" buttons
+- **Global controls**: mark all / clear all / refresh the discovered model list
+- **Provider filter**: only configured providers (with valid API keys) show the toggle
+- **Newly configured providers** show all models active by default
+
+Changes are saved via the Apply button and take effect immediately on the
+server. Claude Code clients need to open a **new window** to pick up the
+updated model list (the client caches models at
+`~/.claude/cache/gateway-models.json`).
 
 ---
 
@@ -442,6 +498,7 @@ see [Contributing back](#contributing-back-to-upstream).
 │   ├── admin_static/       # HTML/JS for the Admin UI
 │   ├── routes.py           # /v1/messages, /v1/models
 │   ├── model_router.py     # model id → provider dispatch
+│   ├── model_catalog.py    # /v1/models response (applies denylist + disabled filters)
 │   └── gateway_model_ids.py # gateway ID rewriting
 ├── cli/                    # `fcc` command, `fcc-server` launcher
 ├── config/                 # provider_catalog.py, settings
@@ -452,7 +509,7 @@ see [Contributing back](#contributing-back-to-upstream).
 │       └── client.py
 ├── messaging/              # Telegram + Discord bots (optional)
 ├── server.py               # FastAPI app factory
-├── pyproject.toml          # 2.4.1 (PATCH bump from upstream 2.3.13)
+├── pyproject.toml          # 2.5.0 (model visibility + denylist)
 └── smoke/                  # integration tests
 ```
 
