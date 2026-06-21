@@ -87,6 +87,7 @@ All of that is in this fork. The bug fix alone is non-trivial to discover
 
 - [What you get](#what-you-get)
 - [Quick start](#quick-start)
+  - [0. Install with an AI assistant](#0-install-with-an-ai-assistant-recommended-if-youre-not-technical)
 - [Supported providers](#supported-providers)
 - [Model visibility control](#model-visibility-control)
 - [MiniMax provider in depth](#minimax-provider-in-depth)
@@ -160,6 +161,152 @@ models appear in the `/model` picker.
 ---
 
 ## Quick start
+
+### 0. Install with an AI assistant (recommended if you're not technical)
+
+Copy the prompt below and paste it into any AI chat (ChatGPT, Claude,
+Gemini, etc.). The assistant will install this wrapper end-to-end on
+your machine — no programming knowledge required on your side.
+
+<details>
+<summary><strong>Click to reveal the install prompt — copy everything inside the box</strong></summary>
+
+```plaintext
+You are helping me install "free-claude-code-plus", a Python wrapper
+around the Claude Code CLI that adds support for MiniMax, OpenRouter,
+OpenAI, DeepSeek, Mistral, and 13+ other LLM providers as first-class
+backends (Claude Code natively only supports Anthropic). It runs
+locally as `fcc-claude` / `fcc` and is normally installed via uv.
+
+Your job: install it on my machine end-to-end and verify it works.
+Do not ask me coding questions — make sensible decisions and tell me
+what you did. If you hit a step that needs my input (e.g. choosing
+a provider key), ask exactly one focused question and continue.
+
+=========================================================
+STEP 1 — Detect my environment
+=========================================================
+Run these commands and remember the output:
+
+  uname -a                          # OS family (Darwin / Linux / Windows-bash)
+  python3 --version                 # need 3.10+ (3.14+ recommended)
+  command -v uv                     # need uv 0.11+ for `uv tool install`
+  command -v claude                 # is Claude Code already installed?
+  command -v fcc-claude             # is this wrapper already installed?
+  echo "KEYS=${MINIMAX_API_KEY:-unset} ${OPENROUTER_API_KEY:-unset}"  # which keys exist?
+
+If `uv` is missing, install it:
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  # restart the shell afterwards
+
+If `python3` is missing, tell me to install Python 3 from
+https://python.org and stop.
+
+=========================================================
+STEP 2 — Install the wrapper
+=========================================================
+Run:
+
+  git clone https://github.com/philipecomputacao/free-claude-code-plus.git
+  cd free-claude-code-plus
+  uv tool install .
+
+If `uv tool install .` fails with "no module named X", that's a
+missing dev dep — install it with `uv tool install . --with X` and
+retry. If it fails with "permission denied" on macOS, ensure
+~/.local/bin is on PATH (`echo $PATH | grep -q "$HOME/.local/bin"`
+should return true; if not, add `export PATH="$HOME/.local/bin:$PATH"`
+to ~/.zshrc and restart the shell).
+
+After install, verify the binaries exist:
+
+  command -v fcc-server             # must print a path
+  command -v fcc                    # must print a path
+
+If either is missing, your PATH doesn't include ~/.local/bin — fix
+the PATH and retry before continuing.
+
+=========================================================
+STEP 3 — Configure provider keys
+=========================================================
+Ask me ONE question: "Which provider do you want to use as backend?"
+Options: MiniMax, OpenRouter, OpenAI, DeepSeek, Mistral, Groq,
+Cerebras, Fireworks, ZAI, Kimi, NVIDIA NIM, Ollama (local), or
+"skip for now" (you can add keys later).
+
+After I answer, run:
+
+  mkdir -p ~/.fcc
+  cp .env.example ~/.fcc/.env
+  # Now edit ~/.fcc/.env and set the matching env var to the key I paste.
+  # NEVER invent a key — wait for me to paste it.
+
+After I paste the key, restart my shell (or `source ~/.zshrc` /
+`source ~/.bashrc`) so the new env var is visible to fcc-server.
+
+=========================================================
+STEP 4 — Start the local proxy
+=========================================================
+The wrapper runs a local HTTP proxy (fcc-server) that Claude Code
+talks to. Start it in the background:
+
+  # macOS / Linux
+  fcc-server start                  # daemonises by default
+  # or, for foreground with logs:
+  fcc-server start --foreground
+
+Verify it's up:
+
+  curl -s -o /dev/null -w "%{http_code}\n" -m 2 http://localhost:8082/
+  # expect 404, 405, or 204 (any HTTP response means the proxy is up)
+
+If curl times out, fcc-server didn't start — check the logs (usually
+~/.local/share/fcc/server.log) and tell me what they say.
+
+=========================================================
+STEP 5 — Run Claude Code through the wrapper
+=========================================================
+Now run Claude Code via the wrapper instead of the bare `claude`
+binary. This makes Claude Code talk to the fcc-server proxy you
+just started, which in turn talks to your chosen provider:
+
+  fcc-claude                        # replaces `claude`
+  # or with a specific session:
+  fcc-claude --resume <session-id>
+
+If you see "API key not set" or "provider not configured", go back
+to STEP 3 — the env var didn't reach fcc-server (shell not reloaded,
+or wrong env file).
+
+=========================================================
+STEP 6 — Verify end-to-end
+=========================================================
+In a fresh fcc-claude session, send a short prompt like "say hi".
+Then exit the session. Run:
+
+  cat ~/.cache/claude-llm-quota-bar/provider-quota.json 2>/dev/null \
+      || echo "quota bar not installed yet — skip this check"
+
+If the quota bar file exists, the wrapper is talking to the
+provider correctly. If the file doesn't exist or is older than
+5 minutes, something is off — paste me the most recent error from
+~/.local/share/fcc/server.log.
+
+=========================================================
+DONE — Tell me what you did
+=========================================================
+Summarise in 3-5 bullet points:
+- which provider I picked and the matching env var you set
+- the install path (output of `command -v fcc-server`)
+- whether STEP 4 verification passed (curl status code)
+- whether STEP 6 verification passed (quota cache fresh?)
+- any caveats or things I should know
+
+If anything failed, give me the exact error message and the command
+that produced it. Don't try to fix it silently — surface it.
+```
+
+</details>
 
 ### Prerequisites
 
