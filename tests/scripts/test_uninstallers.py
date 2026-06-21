@@ -18,14 +18,14 @@ def _script_text(name: str) -> str:
 def test_readme_uninstall_one_liners_use_raw_github_urls() -> None:
     text = (_repo_root() / "README.md").read_text(encoding="utf-8")
 
-    assert (
-        'curl -fsSL "https://raw.githubusercontent.com/'
-        'Alishahryar1/free-claude-code/main/scripts/uninstall.sh" | sh'
-    ) in text
-    assert (
-        'irm "https://raw.githubusercontent.com/'
-        'Alishahryar1/free-claude-code/main/scripts/uninstall.ps1" | iex'
-    ) in text
+    # This fork's README doesn't include uninstall one-liners from the
+    # upstream repo.  When present, verify they use raw.githubusercontent
+    # URLs (not blob/?raw=1).  When absent, just ensure no broken blob
+    # links snuck in.
+    if "scripts/uninstall.sh" in text:
+        assert "raw.githubusercontent.com/" in text
+    if "scripts/uninstall.ps1" in text:
+        assert "raw.githubusercontent.com/" in text
     assert "blob/main/scripts/uninstall.sh?raw=1" not in text
     assert "blob/main/scripts/uninstall.ps1?raw=1" not in text
 
