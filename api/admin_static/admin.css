@@ -246,6 +246,64 @@ textarea {
   word-break: break-word;
 }
 
+.provider-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line-strong);
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.18s, background 0.18s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: rgba(47, 185, 132, 0.18);
+  border-color: rgba(89, 217, 148, 0.42);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+
+.provider-card.disabled-provider {
+  opacity: 0.52;
+}
+
 .test-button,
 .ghost-button,
 .secondary-button,
@@ -456,4 +514,120 @@ textarea {
   .action-buttons button {
     flex: 1;
   }
+}
+
+.visible-models-panel {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--card);
+  margin-bottom: 16px;
+}
+
+.visible-models-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.visible-models-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+}
+
+.visible-models-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 520px;
+}
+
+.visible-models-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.visible-models-actions input[type="search"] {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface, transparent);
+  color: inherit;
+  font-size: 13px;
+  min-width: 220px;
+}
+
+.visible-models-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.visible-models-provider {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.visible-models-provider-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.visible-models-provider-header h4 {
+  margin: 0;
+  font-size: 13px;
+  flex: 1;
+}
+
+.visible-models-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tiny-button {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tiny-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.visible-models-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 4px 12px;
+}
+
+.visible-model-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.visible-model-item input[type="checkbox"] {
+  flex-shrink: 0;
+}
+
+.visible-models-empty {
+  margin: 12px 0 0 0;
+  font-size: 12px;
+  color: var(--muted);
 }

@@ -43,6 +43,39 @@
           </section>
 
           <section id="view-model_config" class="admin-view" data-view="model_config" hidden>
+            <section class="visible-models-panel" aria-label="Visible models">
+              <div class="visible-models-header">
+                <div>
+                  <h3>Modelos visíveis</h3>
+                  <p class="visible-models-subtitle">
+                    Todos os modelos aparecem por padrão. Desmarque os que
+                    não quer ver no <code>/model</code> do Claude Code.
+                  </p>
+                </div>
+                <div class="visible-models-actions">
+                  <input
+                    type="search"
+                    id="visibleModelsSearch"
+                    placeholder="Buscar provider ou modelo"
+                    autocomplete="off"
+                  />
+                  <button id="visibleModelsRefresh" class="secondary-button" type="button" title="Busca modelos novos em todos os providers configurados">
+                    Atualizar lista
+                  </button>
+                  <button id="visibleModelsCheckAll" class="secondary-button" type="button">
+                    Marcar todos
+                  </button>
+                  <button id="visibleModelsClearAll" class="secondary-button" type="button">
+                    Desmarcar todos
+                  </button>
+                </div>
+              </div>
+              <div id="visibleModelsList" class="visible-models-list"></div>
+              <p id="visibleModelsEmpty" class="visible-models-empty" hidden>
+                Nenhum modelo descoberto ainda. Clique em "Atualizar lista"
+                acima (ou use "Refresh models" nos cards de provider).
+              </p>
+            </section>
             <div
               id="modelConfigSections"
               class="form-sections"

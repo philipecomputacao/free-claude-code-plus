@@ -129,7 +129,13 @@ async def apply_admin_config(
     old_registry = getattr(request.app.state, "provider_registry", None)
     if isinstance(old_registry, ProviderRegistry):
         await old_registry.cleanup()
-    request.app.state.provider_registry = ProviderRegistry()
+    new_registry = ProviderRegistry()
+    request.app.state.provider_registry = new_registry
+    # Recreating the registry empties the discovered-model cache, which would
+    # leave /v1/models (and /model in Claude Code) sparse until something
+    # refreshes it. Warm it in the background so the model list repopulates
+    # right after Apply without an extra manual "Atualizar lista" click.
+    new_registry.start_model_list_refresh(get_cached_settings())
     request.app.state.admin_pending_fields = result["pending_fields"]
     return result
 
@@ -192,6 +198,30 @@ async def test_provider(provider_id: str, request: Request):
         "ok": True,
         "models": sorted(info.model_id for info in infos),
     }
+
+
+@router.get("/admin/api/models/discovered")
+async def list_discovered_models(request: Request):
+    require_loopback_admin(request)
+    settings = get_cached_settings()
+    registry = getattr(request.app.state, "provider_registry", None)
+    grouped: dict[str, set[str]] = {}
+    if isinstance(registry, ProviderRegistry):
+        for info in registry.cached_prefixed_model_infos():
+            provider_id, _, model_name = info.model_id.partition("/")
+            if not provider_id or not model_name:
+                continue
+            grouped.setdefault(provider_id, set()).add(info.model_id)
+    for ref in settings.configured_chat_model_refs():
+        grouped.setdefault(ref.provider_id, set()).add(ref.model_ref)
+    providers = [
+        {
+            "provider_id": provider_id,
+            "models": sorted(grouped[provider_id]),
+        }
+        for provider_id in sorted(grouped)
+    ]
+    return {"providers": providers}
 
 
 @router.post("/admin/api/models/refresh")

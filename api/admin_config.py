@@ -265,6 +265,31 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
         ),
     ),
     ConfigFieldSpec(
+        "DISABLED_PROVIDERS",
+        "Disabled Providers",
+        "providers",
+        settings_attr="disabled_providers",
+        default="",
+        description=(
+            "Comma-separated provider IDs to hide from /v1/models listing. "
+            "Explicit provider/model routing still works. "
+            "Toggle provider cards above to populate this field."
+        ),
+    ),
+    ConfigFieldSpec(
+        "HIDDEN_MODELS",
+        "Hidden Models",
+        "providers",
+        "textarea",
+        settings_attr="hidden_models",
+        default="",
+        description=(
+            "Comma-separated denylist of provider/model refs (e.g. "
+            "``minimax/MiniMax-M3``) hidden from /v1/models. Empty shows all "
+            "discovered models. Use the model picker in Model Config to edit."
+        ),
+    ),
+    ConfigFieldSpec(
         "LM_STUDIO_BASE_URL",
         "LM Studio Base URL",
         "providers",

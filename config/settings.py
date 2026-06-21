@@ -299,6 +299,17 @@ class Settings(BaseSettings):
         default=None, validation_alias="MAX_MESSAGE_LOG_ENTRIES_PER_CHAT"
     )
 
+    # ==================== Disabled Providers ====================
+    # Comma-separated list of provider IDs to exclude from /v1/models listing.
+    disabled_providers: str = Field(default="", validation_alias="DISABLED_PROVIDERS")
+
+    # ==================== Hidden Models ====================
+    # Comma-separated denylist of provider-discovered model refs (e.g.
+    # ``minimax/MiniMax-M3``) to hide from /v1/models. Empty means every
+    # discovered model is advertised (the default), so newly configured
+    # providers show all their models without extra setup.
+    hidden_models: str = Field(default="", validation_alias="HIDDEN_MODELS")
+
     # ==================== Server ====================
     host: str = "0.0.0.0"
     port: int = 8082
@@ -511,6 +522,18 @@ class Settings(BaseSettings):
         if "sonnet" in name_lower and self.enable_sonnet_thinking is not None:
             return self.enable_sonnet_thinking
         return self.enable_model_thinking
+
+    def disabled_provider_set(self) -> frozenset[str]:
+        """Return normalized provider IDs excluded from models and routing."""
+        return frozenset(
+            pid.strip() for pid in self.disabled_providers.split(",") if pid.strip()
+        )
+
+    def hidden_model_set(self) -> frozenset[str]:
+        """Return the denylist of discovered provider/model refs to hide."""
+        return frozenset(
+            ref.strip() for ref in self.hidden_models.split(",") if ref.strip()
+        )
 
     def web_fetch_allowed_scheme_set(self) -> frozenset[str]:
         """Return normalized schemes allowed for web_fetch."""

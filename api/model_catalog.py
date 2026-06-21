@@ -56,8 +56,11 @@ def build_models_list_response(
     """Return configured, cached, and compatibility model ids."""
     models: list[ModelResponse] = []
     seen: set[str] = set()
+    disabled = settings.disabled_provider_set()
 
     for ref in settings.configured_chat_model_refs():
+        if ref.provider_id in disabled:
+            continue
         supports_thinking = None
         if provider_registry is not None:
             supports_thinking = provider_registry.cached_model_supports_thinking(
@@ -70,8 +73,16 @@ def build_models_list_response(
             supports_thinking=supports_thinking,
         )
 
+    hidden = settings.hidden_model_set()
     if provider_registry is not None:
         for model_info in provider_registry.cached_prefixed_model_infos():
+            provider_id = model_info.model_id.split("/", 1)[0]
+            if provider_id in disabled:
+                continue
+            # Denylist: every discovered model is advertised by default;
+            # only refs the user explicitly hid are skipped.
+            if model_info.model_id in hidden:
+                continue
             _append_provider_model_variants(
                 models,
                 seen,

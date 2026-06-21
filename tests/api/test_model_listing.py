@@ -12,6 +12,7 @@ def _settings(
     model: str = "deepseek/deepseek-chat",
     model_opus: str | None = "open_router/anthropic/claude-opus",
     model_haiku: str | None = "deepseek/deepseek-chat",
+    hidden_models: str = "",
 ) -> Settings:
     return Settings.model_construct(
         model=model,
@@ -19,6 +20,7 @@ def _settings(
         model_sonnet=None,
         model_haiku=model_haiku,
         anthropic_auth_token="",
+        hidden_models=hidden_models,
     )
 
 
@@ -146,6 +148,32 @@ def test_models_list_includes_cached_wafer_models():
     assert "claude-3-freecc-no-thinking/wafer/DeepSeek-V4-Pro" in ids
     assert "anthropic/wafer/MiniMax-M2.7" in ids
     assert "claude-3-freecc-no-thinking/wafer/MiniMax-M2.7" in ids
+
+
+def test_models_list_hides_denylisted_discovered_models():
+    app = create_app(lifespan_enabled=False)
+    settings = _settings(
+        model="wafer/DeepSeek-V4-Pro",
+        model_opus=None,
+        model_haiku=None,
+        hidden_models="wafer/MiniMax-M2.7",
+    )
+    registry = ProviderRegistry()
+    registry.cache_model_ids("wafer", {"DeepSeek-V4-Pro", "MiniMax-M2.7"})
+    app.state.provider_registry = registry
+    app.dependency_overrides[get_settings] = lambda: settings
+
+    try:
+        response = TestClient(app).get("/v1/models")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    ids = [item["id"] for item in response.json()["data"]]
+    # Hidden model is gone, the rest of the provider stays visible.
+    assert "anthropic/wafer/MiniMax-M2.7" not in ids
+    assert "claude-3-freecc-no-thinking/wafer/MiniMax-M2.7" not in ids
+    assert "anthropic/wafer/DeepSeek-V4-Pro" in ids
 
 
 def test_models_list_works_without_provider_registry():

@@ -4,6 +4,10 @@ const state = {
   localStatus: new Map(),
   modelOptions: [],
   activeView: "providers",
+  disabledProviders: new Set(),
+  hiddenModels: new Set(),
+  discoveredProviders: [],
+  visibleModelsSearch: "",
 };
 
 const MASKED_SECRET = "********";
@@ -103,9 +107,26 @@ async function load() {
   const config = await api("/admin/api/config");
   state.config = config;
   state.fields = new Map(config.fields.map((field) => [field.key, field]));
+  const rawDisabled = (state.fields.get("DISABLED_PROVIDERS") || {}).value || "";
+  state.disabledProviders = new Set(
+    rawDisabled
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  const rawHidden = (state.fields.get("HIDDEN_MODELS") || {}).value || "";
+  state.hiddenModels = new Set(
+    rawHidden
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
   renderNav();
   renderProviders(config.provider_status);
   renderSections(config.sections, config.fields);
+  hideDisabledProvidersField();
+  hideHiddenModelsField();
+  await loadDiscoveredModels();
   byId("configPath").textContent = config.paths.managed;
   await validate(false);
   await refreshLocalStatus();
@@ -164,8 +185,9 @@ function renderProviders(providerStatus) {
   const grid = byId("providerGrid");
   grid.innerHTML = "";
   providerStatus.forEach((provider) => {
+    const disabled = state.disabledProviders.has(provider.provider_id);
     const card = document.createElement("article");
-    card.className = "provider-card";
+    card.className = `provider-card${disabled ? " disabled-provider" : ""}`;
     card.dataset.provider = provider.provider_id;
 
     const title = document.createElement("div");
@@ -184,13 +206,34 @@ function renderProviders(providerStatus) {
         ? provider.base_url || "No local URL configured"
         : provider.credential_env;
 
+    const actions = document.createElement("div");
+    actions.className = "provider-actions";
+
+    const isConfigured =
+      provider.status !== "missing_key" && provider.status !== "missing_url";
+    if (isConfigured) {
+      const toggleLabel = document.createElement("label");
+      toggleLabel.className = "toggle-switch";
+      const toggleInput = document.createElement("input");
+      toggleInput.type = "checkbox";
+      toggleInput.checked = !state.disabledProviders.has(provider.provider_id);
+      toggleInput.addEventListener("change", () => {
+        toggleProvider(provider.provider_id, toggleInput.checked);
+      });
+      const toggleSlider = document.createElement("span");
+      toggleSlider.className = "toggle-slider";
+      toggleLabel.append(toggleInput, toggleSlider);
+      actions.appendChild(toggleLabel);
+    }
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "test-button";
     button.textContent = provider.kind === "local" ? "Test" : "Refresh models";
     button.addEventListener("click", () => testProvider(provider.provider_id, button));
+    actions.appendChild(button);
 
-    card.append(title, meta, button);
+    card.append(title, meta, actions);
     grid.appendChild(card);
   });
 }
@@ -356,6 +399,216 @@ function option(value, label) {
   return optionEl;
 }
 
+function toggleProvider(providerId, enabled) {
+  if (enabled) {
+    state.disabledProviders.delete(providerId);
+  } else {
+    state.disabledProviders.add(providerId);
+  }
+  syncDisabledProvidersField();
+  updateDirtyState();
+  const card = document.querySelector(`[data-provider="${providerId}"]`);
+  if (card) {
+    card.classList.toggle("disabled-provider", !enabled);
+  }
+  renderVisibleModels();
+}
+
+function disabledProvidersValue() {
+  return Array.from(state.disabledProviders).sort().join(",");
+}
+
+function syncDisabledProvidersField() {
+  const input = byId("field-DISABLED_PROVIDERS");
+  if (!input) return;
+  input.value = disabledProvidersValue();
+}
+
+function hideDisabledProvidersField() {
+  const field = document.querySelector(".field[data-key='DISABLED_PROVIDERS']");
+  if (field) {
+    field.style.display = "none";
+  }
+}
+
+function hideHiddenModelsField() {
+  const field = document.querySelector(".field[data-key='HIDDEN_MODELS']");
+  if (field) {
+    field.style.display = "none";
+  }
+}
+
+async function loadDiscoveredModels() {
+  try {
+    const result = await api("/admin/api/models/discovered");
+    state.discoveredProviders = result.providers || [];
+  } catch (err) {
+    state.discoveredProviders = [];
+  }
+  renderVisibleModels();
+}
+
+// A model is visible unless the user explicitly added it to the hidden
+// denylist. Default = everything checked, so newly configured providers
+// show all models with zero setup.
+function isModelVisible(modelRef) {
+  return !state.hiddenModels.has(modelRef);
+}
+
+function setModelVisible(modelRef, visible) {
+  if (visible) state.hiddenModels.delete(modelRef);
+  else state.hiddenModels.add(modelRef);
+}
+
+function renderVisibleModels() {
+  const container = byId("visibleModelsList");
+  const empty = byId("visibleModelsEmpty");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const search = state.visibleModelsSearch.trim().toLowerCase();
+  const providers = state.discoveredProviders.filter(
+    (p) => !state.disabledProviders.has(p.provider_id),
+  );
+  let totalRendered = 0;
+
+  providers.forEach((provider) => {
+    const matchedModels = provider.models.filter((modelRef) => {
+      if (!search) return true;
+      return (
+        modelRef.toLowerCase().includes(search) ||
+        providerName(provider.provider_id).toLowerCase().includes(search)
+      );
+    });
+    if (!matchedModels.length) return;
+    totalRendered += matchedModels.length;
+
+    const block = document.createElement("div");
+    block.className = "visible-models-provider";
+
+    const header = document.createElement("div");
+    header.className = "visible-models-provider-header";
+    const title = document.createElement("h4");
+    title.textContent = providerName(provider.provider_id);
+    const count = document.createElement("span");
+    count.className = "visible-models-count";
+    count.textContent = `${matchedModels.filter(isModelVisible).length}/${matchedModels.length}`;
+
+    // Single toggle that flips with the current state of the visible
+    // (post-search) models: if all are on it offers to turn them off,
+    // otherwise it turns them all on.
+    const allVisible = matchedModels.every(isModelVisible);
+    const toggleAll = document.createElement("button");
+    toggleAll.type = "button";
+    toggleAll.className = "tiny-button";
+    toggleAll.textContent = allVisible ? "Desmarcar todos" : "Marcar todos";
+    toggleAll.addEventListener("click", () => {
+      matchedModels.forEach((ref) => setModelVisible(ref, !allVisible));
+      syncHiddenModelsField();
+      updateDirtyState();
+      renderVisibleModels();
+    });
+
+    header.append(title, count, toggleAll);
+    block.appendChild(header);
+
+    const list = document.createElement("div");
+    list.className = "visible-models-grid";
+    matchedModels.forEach((modelRef) => {
+      const label = document.createElement("label");
+      label.className = "visible-model-item";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = isModelVisible(modelRef);
+      input.addEventListener("change", () => {
+        setModelVisible(modelRef, input.checked);
+        syncHiddenModelsField();
+        updateDirtyState();
+        count.textContent = `${matchedModels.filter(isModelVisible).length}/${matchedModels.length}`;
+        toggleAll.textContent = matchedModels.every(isModelVisible)
+          ? "Desmarcar todos"
+          : "Marcar todos";
+      });
+      const span = document.createElement("span");
+      span.textContent = modelRef.split("/").slice(1).join("/") || modelRef;
+      label.append(input, span);
+      list.appendChild(label);
+    });
+    block.appendChild(list);
+    container.appendChild(block);
+  });
+
+  if (empty) {
+    empty.hidden = totalRendered > 0;
+  }
+}
+
+function hiddenModelsValue() {
+  return Array.from(state.hiddenModels).sort().join(",");
+}
+
+function syncHiddenModelsField() {
+  const input = byId("field-HIDDEN_MODELS");
+  if (!input) return;
+  input.value = hiddenModelsValue();
+}
+
+function allVisibleProviderModels() {
+  return state.discoveredProviders
+    .filter((p) => !state.disabledProviders.has(p.provider_id))
+    .flatMap((p) => p.models);
+}
+
+function setupVisibleModelsControls() {
+  const search = byId("visibleModelsSearch");
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = "1";
+    search.addEventListener("input", (event) => {
+      state.visibleModelsSearch = event.target.value;
+      renderVisibleModels();
+    });
+  }
+  const checkAll = byId("visibleModelsCheckAll");
+  if (checkAll && !checkAll.dataset.bound) {
+    checkAll.dataset.bound = "1";
+    checkAll.addEventListener("click", () => {
+      allVisibleProviderModels().forEach((m) => state.hiddenModels.delete(m));
+      syncHiddenModelsField();
+      updateDirtyState();
+      renderVisibleModels();
+    });
+  }
+  const clearAll = byId("visibleModelsClearAll");
+  if (clearAll && !clearAll.dataset.bound) {
+    clearAll.dataset.bound = "1";
+    clearAll.addEventListener("click", () => {
+      allVisibleProviderModels().forEach((m) => state.hiddenModels.add(m));
+      syncHiddenModelsField();
+      updateDirtyState();
+      renderVisibleModels();
+    });
+  }
+  const refresh = byId("visibleModelsRefresh");
+  if (refresh && !refresh.dataset.bound) {
+    refresh.dataset.bound = "1";
+    refresh.addEventListener("click", async () => {
+      refresh.disabled = true;
+      const original = refresh.textContent;
+      refresh.textContent = "Atualizando…";
+      try {
+        await api("/admin/api/models/refresh", { method: "POST", body: "{}" });
+        await loadDiscoveredModels();
+        showMessage("Lista de modelos atualizada", "ok");
+      } catch (err) {
+        showMessage(`Falha ao atualizar: ${err.message}`, "error");
+      } finally {
+        refresh.disabled = false;
+        refresh.textContent = original;
+      }
+    });
+  }
+}
+
 function readFieldValue(input) {
   if (input.type === "checkbox") return input.checked ? "true" : "false";
   if (input.dataset.secret === "true" && input.dataset.configured === "true") {
@@ -492,6 +745,7 @@ function showMessage(message, kind = "") {
 
 byId("validateButton").addEventListener("click", () => validate(true));
 byId("applyButton").addEventListener("click", apply);
+setupVisibleModelsControls();
 
 load().catch((error) => {
   showMessage(error.message, "error");
