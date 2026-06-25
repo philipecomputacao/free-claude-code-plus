@@ -248,20 +248,24 @@ After I paste the key, restart my shell (or `source ~/.zshrc` /
 STEP 4 — Start the local proxy
 =========================================================
 The wrapper runs a local HTTP proxy (fcc-server) that Claude Code
-talks to. Start it in the background:
+talks to. fcc-server has no subcommands — invoking it starts the
+proxy directly in foreground. To run it in the background:
 
-  # macOS / Linux
-  fcc-server start                  # daemonises by default
-  # or, for foreground with logs:
-  fcc-server start --foreground
+  # macOS / Linux — background
+  nohup fcc-server > ~/.fcc/logs/server.out 2>&1 &
+
+  # or, foreground (Ctrl+C to stop)
+  fcc-server
 
 Verify it's up:
 
   curl -s -o /dev/null -w "%{http_code}\n" -m 2 http://localhost:8082/
   # expect 404, 405, or 204 (any HTTP response means the proxy is up)
 
-If curl times out, fcc-server didn't start — check the logs (usually
-~/.local/share/fcc/server.log) and tell me what they say.
+If curl times out, fcc-server didn't start — check the logs (the
+proxy writes to ~/.fcc/logs/server.log via loguru; the uvicorn
+stdout/stderr goes wherever you redirected it, e.g. server.out) and
+tell me what they say.
 
 =========================================================
 STEP 5 — Run Claude Code through the wrapper
@@ -290,7 +294,7 @@ Then exit the session. Run:
 If the quota bar file exists, the wrapper is talking to the
 provider correctly. If the file doesn't exist or is older than
 5 minutes, something is off — paste me the most recent error from
-~/.local/share/fcc/server.log.
+~/.fcc/logs/server.log.
 
 =========================================================
 DONE — Tell me what you did
@@ -322,7 +326,8 @@ that produced it. Don't try to fix it silently — surface it.
 git clone https://github.com/philipecomputacao/free-claude-code-plus.git
 cd free-claude-code-plus
 
-# Install as a uv tool (creates `fcc-server` and `fcc` commands)
+# Install as a uv tool (creates `fcc-server`, `free-claude-code`,
+# `fcc-init`, `fcc-claude`, and `fcc-codex` commands)
 uv tool install .
 ```
 
@@ -365,10 +370,10 @@ GROQ_API_KEY=gsk_...
 
 ```bash
 # Start the server in the background
-nohup fcc-server > ~/.fcc/server.log 2>&1 &
+nohup fcc-server > ~/.fcc/logs/server.out 2>&1 &
 
-# Or use the launcher
-fcc run
+# Or, foreground (Ctrl+C to stop):
+fcc-server
 
 # Check health
 curl http://127.0.0.1:8082/health
