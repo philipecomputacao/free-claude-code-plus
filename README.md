@@ -340,8 +340,10 @@ Add the API keys for the providers you want to enable:
 # ~/.fcc/.env
 
 # Required for the server itself
-APP_PORT=8082
-APP_HOST=127.0.0.1
+# Defaults are HOST=127.0.0.1, PORT=8082 (localhost-only; safe default).
+# Set HOST=0.0.0.0 ONLY if you need the proxy reachable from your LAN.
+PORT=8082
+# HOST=127.0.0.1
 
 # MiniMax (this fork adds support)
 MINIMAX_API_KEY=sk-cp-...

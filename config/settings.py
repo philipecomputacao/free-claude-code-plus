@@ -311,7 +311,12 @@ class Settings(BaseSettings):
     hidden_models: str = Field(default="", validation_alias="HIDDEN_MODELS")
 
     # ==================== Server ====================
-    host: str = "0.0.0.0"
+    # Bind to localhost-only by default. Override with HOST=0.0.0.0 in
+    # ~/.fcc/.env if you need the proxy reachable from other machines on
+    # the LAN (e.g. for a tablet pointing at this Mac). Leaving the default
+    # at 0.0.0.0 would expose the unauthenticated /admin and /v1/* surface
+    # to every device on the network.
+    host: str = "127.0.0.1"
     port: int = 8082
     # Optional server API key to protect endpoints (Anthropic-style)
     # Set via env `ANTHROPIC_AUTH_TOKEN`. When empty, no auth is required.
