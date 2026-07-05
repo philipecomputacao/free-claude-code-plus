@@ -265,6 +265,65 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
         ),
     ),
     ConfigFieldSpec(
+        "CLOUDFLARE_API_TOKEN",
+        "Cloudflare API Token",
+        "providers",
+        "secret",
+        settings_attr="cloudflare_api_token",
+        secret=True,
+        description=(
+            "Cloudflare API token (create in [dash.cloudflare.com](https://dash.cloudflare.com/profile/api-tokens)) "
+            "with Workers AI read permission. Also requires CLOUDFLARE_ACCOUNT_ID below."
+        ),
+    ),
+    ConfigFieldSpec(
+        "CLOUDFLARE_ACCOUNT_ID",
+        "Cloudflare Account ID",
+        "providers",
+        "text",
+        settings_attr="cloudflare_account_id",
+        description=(
+            "Cloudflare account ID (find in right sidebar of Workers dashboard) "
+            "required for Workers AI chat completions routing."
+        ),
+    ),
+    ConfigFieldSpec(
+        "COHERE_API_KEY",
+        "Cohere API Key",
+        "providers",
+        "secret",
+        settings_attr="cohere_api_key",
+        secret=True,
+        description=(
+            "Cohere API key (create in [dashboard.cohere.com](https://dashboard.cohere.com/api-keys)). "
+            "Routes OpenAI-compatible chat completions to Cohere v1 compatibility endpoint."
+        ),
+    ),
+    ConfigFieldSpec(
+        "HUGGINGFACE_API_KEY",
+        "HuggingFace API Key",
+        "providers",
+        "secret",
+        settings_attr="huggingface_api_key",
+        secret=True,
+        description=(
+            "HuggingFace API token (create in [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)). "
+            "Routes OpenAI-compatible chat completions via HuggingFace Inference Providers router."
+        ),
+    ),
+    ConfigFieldSpec(
+        "VERCEL_AI_GATEWAY_API_KEY",
+        "Vercel AI Gateway API Key",
+        "providers",
+        "secret",
+        settings_attr="vercel_ai_gateway_api_key",
+        secret=True,
+        description=(
+            "Vercel AI Gateway API key (create in [vercel.com/docs/ai-gateway](https://vercel.com/docs/ai-gateway)). "
+            "Routes OpenAI-compatible chat completions via Vercel AI Gateway."
+        ),
+    ),
+    ConfigFieldSpec(
         "DISABLED_PROVIDERS",
         "Disabled Providers",
         "providers",
@@ -451,6 +510,42 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
         "providers",
         "secret",
         settings_attr="minimax_proxy",
+        secret=True,
+        advanced=True,
+    ),
+    ConfigFieldSpec(
+        "CLOUDFLARE_PROXY",
+        "Cloudflare Proxy",
+        "providers",
+        "secret",
+        settings_attr="cloudflare_proxy",
+        secret=True,
+        advanced=True,
+    ),
+    ConfigFieldSpec(
+        "COHERE_PROXY",
+        "Cohere Proxy",
+        "providers",
+        "secret",
+        settings_attr="cohere_proxy",
+        secret=True,
+        advanced=True,
+    ),
+    ConfigFieldSpec(
+        "HUGGINGFACE_PROXY",
+        "HuggingFace Proxy",
+        "providers",
+        "secret",
+        settings_attr="huggingface_proxy",
+        secret=True,
+        advanced=True,
+    ),
+    ConfigFieldSpec(
+        "VERCEL_AI_GATEWAY_PROXY",
+        "Vercel AI Gateway Proxy",
+        "providers",
+        "secret",
+        settings_attr="vercel_ai_gateway_proxy",
         secret=True,
         advanced=True,
     ),

@@ -142,6 +142,30 @@ def _create_minimax(config: ProviderConfig, _settings: Settings) -> BaseProvider
     return MiniMaxProvider(config)
 
 
+def _create_cloudflare(config: ProviderConfig, settings: Settings) -> BaseProvider:
+    from providers.cloudflare import CloudflareProvider
+
+    return CloudflareProvider(config, account_id=settings.cloudflare_account_id)
+
+
+def _create_cohere(config: ProviderConfig, _settings: Settings) -> BaseProvider:
+    from providers.cohere import CohereProvider
+
+    return CohereProvider(config)
+
+
+def _create_huggingface(config: ProviderConfig, _settings: Settings) -> BaseProvider:
+    from providers.huggingface import HuggingFaceProvider
+
+    return HuggingFaceProvider(config)
+
+
+def _create_vercel(config: ProviderConfig, _settings: Settings) -> BaseProvider:
+    from providers.vercel import VercelProvider
+
+    return VercelProvider(config)
+
+
 PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
     "nvidia_nim": _create_nvidia_nim,
     "open_router": _create_open_router,
@@ -161,6 +185,10 @@ PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
     "llamacpp": _create_llamacpp,
     "ollama": _create_ollama,
     "minimax": _create_minimax,
+    "cloudflare": _create_cloudflare,
+    "cohere": _create_cohere,
+    "huggingface": _create_huggingface,
+    "vercel": _create_vercel,
 }
 
 if set(PROVIDER_DESCRIPTORS) != set(SUPPORTED_PROVIDER_IDS) or set(

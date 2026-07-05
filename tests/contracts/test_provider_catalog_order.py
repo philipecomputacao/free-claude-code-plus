@@ -23,6 +23,10 @@ _EXPECTED_PROVIDER_ORDER: tuple[str, ...] = (
     "llamacpp",
     "ollama",
     "minimax",
+    "cloudflare",
+    "cohere",
+    "huggingface",
+    "vercel",
 )
 
 
