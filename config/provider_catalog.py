@@ -40,6 +40,14 @@ CEREBRAS_DEFAULT_BASE = "https://api.cerebras.ai/v1"
 # Base URL ends with ``/v1`` because MiniMax serves ``/anthropic/v1/messages``,
 # not bare ``/anthropic/messages``. See https://platform.minimax.io/docs/guides/quickstart.
 MINIMAX_DEFAULT_BASE = "https://api.minimax.io/anthropic/v1"
+# Cloudflare Workers AI REST API (account_id is required in addition to api_token).
+CLOUDFLARE_AI_REST_ROOT = "https://api.cloudflare.com/client/v4"
+# Cohere OpenAI-compatible chat completions endpoint.
+COHERE_DEFAULT_BASE = "https://api.cohere.ai/compatibility/v1"
+# HuggingFace Inference Providers OpenAI-compatible router.
+HUGGINGFACE_DEFAULT_BASE = "https://router.huggingface.co/v1"
+# Vercel AI Gateway OpenAI-compatible endpoint.
+VERCEL_AI_GATEWAY_DEFAULT_BASE = "https://ai-gateway.vercel.sh/v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -266,6 +274,46 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
             "native_anthropic",
             "rate_limit",
         ),
+    ),
+    "cloudflare": ProviderDescriptor(
+        provider_id="cloudflare",
+        transport_type="openai_chat",
+        credential_env="CLOUDFLARE_API_TOKEN",
+        credential_url="https://dash.cloudflare.com/profile/api-tokens",
+        credential_attr="cloudflare_api_token",
+        default_base_url=CLOUDFLARE_AI_REST_ROOT,
+        proxy_attr="cloudflare_proxy",
+        capabilities=("chat", "streaming", "rate_limit"),
+    ),
+    "cohere": ProviderDescriptor(
+        provider_id="cohere",
+        transport_type="openai_chat",
+        credential_env="COHERE_API_KEY",
+        credential_url="https://dashboard.cohere.com/api-keys",
+        credential_attr="cohere_api_key",
+        default_base_url=COHERE_DEFAULT_BASE,
+        proxy_attr="cohere_proxy",
+        capabilities=("chat", "streaming", "rate_limit"),
+    ),
+    "huggingface": ProviderDescriptor(
+        provider_id="huggingface",
+        transport_type="openai_chat",
+        credential_env="HUGGINGFACE_API_KEY",
+        credential_url="https://huggingface.co/settings/tokens",
+        credential_attr="huggingface_api_key",
+        default_base_url=HUGGINGFACE_DEFAULT_BASE,
+        proxy_attr="huggingface_proxy",
+        capabilities=("chat", "streaming", "rate_limit"),
+    ),
+    "vercel": ProviderDescriptor(
+        provider_id="vercel",
+        transport_type="openai_chat",
+        credential_env="VERCEL_AI_GATEWAY_API_KEY",
+        credential_url="https://vercel.com/docs/ai-gateway",
+        credential_attr="vercel_ai_gateway_api_key",
+        default_base_url=VERCEL_AI_GATEWAY_DEFAULT_BASE,
+        proxy_attr="vercel_ai_gateway_proxy",
+        capabilities=("chat", "streaming", "rate_limit"),
     ),
 }
 

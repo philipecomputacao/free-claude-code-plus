@@ -118,6 +118,28 @@ class Settings(BaseSettings):
     # Token Plan subscription key or pay-as-you-go API key from platform.minimax.io.
     minimax_api_key: str = Field(default="", validation_alias="MINIMAX_API_KEY")
 
+    # ==================== Cloudflare Workers AI (OpenAI-compatible) ====================
+    # API token from dash.cloudflare.com/profile/api-tokens + account id.
+    cloudflare_api_token: str = Field(
+        default="", validation_alias="CLOUDFLARE_API_TOKEN"
+    )
+    cloudflare_account_id: str = Field(
+        default="", validation_alias="CLOUDFLARE_ACCOUNT_ID"
+    )
+
+    # ==================== Cohere (OpenAI-compatible chat completions) ====================
+    cohere_api_key: str = Field(default="", validation_alias="COHERE_API_KEY")
+
+    # ==================== HuggingFace Inference Providers (OpenAI-compatible) ====================
+    huggingface_api_key: str = Field(
+        default="", validation_alias="HUGGINGFACE_API_KEY"
+    )
+
+    # ==================== Vercel AI Gateway (OpenAI-compatible) ====================
+    vercel_ai_gateway_api_key: str = Field(
+        default="", validation_alias="VERCEL_AI_GATEWAY_API_KEY"
+    )
+
     # ==================== Messaging Platform Selection ====================
     # Valid: "telegram" | "discord" | "none"
     messaging_platform: str = Field(
@@ -179,6 +201,12 @@ class Settings(BaseSettings):
     groq_proxy: str = Field(default="", validation_alias="GROQ_PROXY")
     cerebras_proxy: str = Field(default="", validation_alias="CEREBRAS_PROXY")
     minimax_proxy: str = Field(default="", validation_alias="MINIMAX_PROXY")
+    cloudflare_proxy: str = Field(default="", validation_alias="CLOUDFLARE_PROXY")
+    cohere_proxy: str = Field(default="", validation_alias="COHERE_PROXY")
+    huggingface_proxy: str = Field(default="", validation_alias="HUGGINGFACE_PROXY")
+    vercel_ai_gateway_proxy: str = Field(
+        default="", validation_alias="VERCEL_AI_GATEWAY_PROXY"
+    )
 
     # ==================== Provider Rate Limiting ====================
     provider_rate_limit: int = Field(default=40, validation_alias="PROVIDER_RATE_LIMIT")
