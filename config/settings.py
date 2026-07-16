@@ -131,9 +131,7 @@ class Settings(BaseSettings):
     cohere_api_key: str = Field(default="", validation_alias="COHERE_API_KEY")
 
     # ==================== HuggingFace Inference Providers (OpenAI-compatible) ====================
-    huggingface_api_key: str = Field(
-        default="", validation_alias="HUGGINGFACE_API_KEY"
-    )
+    huggingface_api_key: str = Field(default="", validation_alias="HUGGINGFACE_API_KEY")
 
     # ==================== Vercel AI Gateway (OpenAI-compatible) ====================
     vercel_ai_gateway_api_key: str = Field(
@@ -597,3 +595,22 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+
+def reload_settings() -> Settings:
+    """Force a fresh :class:`Settings` read, syncing ``os.environ`` from the
+    managed env file.
+
+    Use after manually editing ``~/.fcc/.env`` so the in-process settings
+    cache reflects the new values. Keys absent from the managed env file
+    are left untouched in ``os.environ`` to preserve any process-level
+    overrides (such as ``ANTHROPIC_AUTH_TOKEN`` exported from the shell).
+    Always invalidates :func:`get_settings`'s ``lru_cache`` before reading.
+    """
+    path = managed_env_path()
+    if path.is_file():
+        for key, value in dotenv_values(path).items():
+            if value is not None and str(value).strip():
+                os.environ[key] = str(value)
+    get_settings.cache_clear()
+    return get_settings()

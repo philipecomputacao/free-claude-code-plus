@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -510,3 +511,88 @@ def test_admin_launch_url_uses_loopback_for_wildcard_host():
     settings = Settings.model_construct(host="0.0.0.0", port=8082)
 
     assert local_admin_url(settings) == "http://127.0.0.1:8082/admin"
+
+
+def test_reload_settings_picks_up_managed_env_after_manual_edit(monkeypatch, tmp_path):
+    """Editing ~/.fcc/.env manually must be honored by reload_settings()."""
+    _set_home(monkeypatch, tmp_path)
+    _clear_process_config(monkeypatch)
+    managed_path = tmp_path / ".fcc" / ".env"
+    managed_path.parent.mkdir(parents=True, exist_ok=True)
+    managed_path.write_text("MODEL=minimax/minimax-original\n", encoding="utf-8")
+
+    from config.settings import get_settings, reload_settings
+
+    # Seed os.environ with the managed value (Settings() reads from os.environ
+    # when conftest sets env_file=None), then prime the lru_cache so the
+    # subsequent stale-cache assertion has a real previous value to compare.
+    monkeypatch.setenv("MODEL", "minimax/minimax-original")
+    initial = get_settings()
+    assert initial.model == "minimax/minimax-original"
+
+    # Mutate the managed file by hand (no apply call). reload_settings() must
+    # re-read it and refresh the cached Settings.
+    managed_path.write_text(
+        "MODEL=open_router/anthropic/claude-3.5-sonnet\n", encoding="utf-8"
+    )
+
+    stale = get_settings()
+    assert stale.model == "minimax/minimax-original"
+
+    fresh = reload_settings()
+    assert fresh.model == "open_router/anthropic/claude-3.5-sonnet"
+    assert os.environ["MODEL"] == "open_router/anthropic/claude-3.5-sonnet"
+
+
+def test_reload_admin_config_endpoint_rebuilds_registry(monkeypatch, tmp_path):
+    """POST /admin/api/config/reload rebuilds the provider registry and
+    reflects the managed env values without requiring a server restart."""
+    _set_home(monkeypatch, tmp_path)
+    _clear_process_config(monkeypatch)
+    managed_path = tmp_path / ".fcc" / ".env"
+    managed_path.parent.mkdir(parents=True, exist_ok=True)
+    # Seed the in-process Settings cache (conftest disables env_file so the
+    # settings read comes from os.environ), then prove the reload endpoint
+    # honors a manual edit by re-reading from the managed env file.
+    monkeypatch.setenv("MODEL", "minimax/minimax-v1")
+    managed_path.write_text("MODEL=minimax/minimax-v1\n", encoding="utf-8")
+
+    app = create_app(lifespan_enabled=False)
+    client = _local_client(app)
+
+    from providers.registry import ProviderRegistry
+
+    # Prime the registry with the original provider so cleanup() has
+    # something to call when the endpoint rebuilds it.
+    initial_registry = ProviderRegistry()
+    initial_registry.get("minimax", Settings())
+    assert initial_registry.is_cached("minimax") is True
+    app.state.provider_registry = initial_registry
+
+    # User manually edits ~/.fcc/.env (no apply call) to a different model.
+    managed_path.write_text(
+        "MODEL=open_router/anthropic/claude-3.5-sonnet\n", encoding="utf-8"
+    )
+
+    with patch.object(ProviderRegistry, "start_model_list_refresh"):
+        response = client.post("/admin/api/config/reload")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reloaded"] is True
+    assert body["provider"] == "open_router"
+    assert body["model"] == "open_router/anthropic/claude-3.5-sonnet"
+    # Registry was rebuilt — old instance replaced by a fresh one.
+    assert app.state.provider_registry is not initial_registry
+    assert isinstance(app.state.provider_registry, ProviderRegistry)
+    # Cleanup ran on the previous registry, so its cache is now empty.
+    assert initial_registry.is_cached("minimax") is False
+
+
+def test_reload_admin_config_endpoint_requires_loopback(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    _clear_process_config(monkeypatch)
+    app = create_app(lifespan_enabled=False)
+    remote = TestClient(app, client=("203.0.113.10", 50000))
+    response = remote.post("/admin/api/config/reload")
+    assert response.status_code == 403

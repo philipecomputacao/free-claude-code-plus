@@ -13,7 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from config.settings import Settings
+from config.settings import Settings, reload_settings
 from config.settings import get_settings as get_cached_settings
 from providers.registry import ProviderRegistry
 
@@ -138,6 +138,35 @@ async def apply_admin_config(
     new_registry.start_model_list_refresh(get_cached_settings())
     request.app.state.admin_pending_fields = result["pending_fields"]
     return result
+
+
+@router.post("/admin/api/config/reload")
+async def reload_admin_config(request: Request, background_tasks: BackgroundTasks):
+    """Re-read Settings from disk and rebuild the provider registry.
+
+    Use after manually editing ``~/.fcc/.env`` so the running server picks up
+    the new values without requiring a restart. Refreshes the discovered
+    model cache in the background so ``/v1/models`` repopulates immediately.
+    """
+    require_loopback_admin(request)
+    reload_settings()
+
+    old_registry = getattr(request.app.state, "provider_registry", None)
+    if isinstance(old_registry, ProviderRegistry):
+        await old_registry.cleanup()
+    new_registry = ProviderRegistry()
+    request.app.state.provider_registry = new_registry
+    new_registry.start_model_list_refresh(get_cached_settings())
+
+    async def _warm_cache() -> None:
+        await new_registry.refresh_model_list_cache(get_cached_settings())
+
+    background_tasks.add_task(_warm_cache)
+    return {
+        "reloaded": True,
+        "provider": get_cached_settings().provider_type,
+        "model": get_cached_settings().model,
+    }
 
 
 @router.get("/admin/api/status")
