@@ -15,9 +15,10 @@ from free_claude_code.application.model_metadata import (
     ProviderModelRefreshResult,
 )
 from free_claude_code.config.admin.values import MASKED_SECRET
+from free_claude_code.config.env_files import settings_env_files
 from free_claude_code.config.server_urls import local_admin_url
-from free_claude_code.config.settings import Settings
-from tests.api.support import create_test_app, provider_manager_for_app
+from free_claude_code.config.settings import Settings, get_settings
+from tests.api.support import create_test_app, provider_manager_for_app, runtime_for_app
 
 
 def _local_client(app):
@@ -28,28 +29,58 @@ def _set_home(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setitem(Settings.model_config, "env_file", settings_env_files())
+    get_settings.cache_clear()
 
 
 def _clear_process_config(monkeypatch) -> None:
+    get_settings.cache_clear()
     for key in (
         "MODEL",
+        "OPENAI_API_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_BASE_URL",
         "NVIDIA_NIM_API_KEY",
         "HUGGINGFACE_API_KEY",
         "OPENROUTER_API_KEY",
+        "MISTRAL_API_KEY",
+        "CODESTRAL_API_KEY",
+        "KIMI_API_KEY",
+        "KIMI_CODE_API_KEY",
+        "WAFER_API_KEY",
+        "MINIMAX_API_KEY",
+        "OPENCODE_API_KEY",
+        "VERCEL_AI_GATEWAY_API_KEY",
         "AWS_BEARER_TOKEN_BEDROCK",
         "BEDROCK_BASE_URL",
         "BEDROCK_PROXY",
         "OLLAMA_API_KEY",
+        "OLLAMA_CLOUD_API_KEY",
         "ANTHROPIC_AUTH_TOKEN",
         "TELEGRAM_PROXY_URL",
         "FCC_ENV_FILE",
         "CLOUDFLARE_API_TOKEN",
         "CLOUDFLARE_ACCOUNT_ID",
         "GITHUB_MODELS_TOKEN",
+        "GROQ_API_KEY",
+        "CEREBRAS_API_KEY",
+        "FIREWORKS_API_KEY",
+        "GEMINI_API_KEY",
+        "COHERE_API_KEY",
         "SAMBANOVA_API_KEY",
+        "KILO_API_KEY",
         "HOST",
         "PORT",
+        "DISABLED_PROVIDERS",
+        "HIDDEN_MODELS",
         "FCC_OPEN_BROWSER",
+        "DEBUG_PLATFORM_EDITS",
+        "DEBUG_SUBAGENT_STACK",
+        "LOG_RAW_API_PAYLOADS",
+        "LOG_API_ERROR_TRACEBACKS",
+        "LOG_RAW_MESSAGING_CONTENT",
+        "LOG_RAW_CLI_DIAGNOSTICS",
+        "LOG_MESSAGING_ERROR_DETAILS",
         "VOICE_NOTE_ENABLED",
         "WHISPER_DEVICE",
         "LOG_FILE",
@@ -138,6 +169,39 @@ def test_admin_unexpected_errors_are_never_cached(monkeypatch, tmp_path):
 
     assert response.status_code == 500
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_admin_config_reload_reads_managed_env_without_restart(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    _clear_process_config(monkeypatch)
+    env_path = tmp_path / ".fcc" / ".env"
+    env_path.parent.mkdir()
+    env_path.write_text(
+        "MODEL=deepseek/deepseek-chat\n"
+        "DEEPSEEK_API_KEY=deepseek-key\n"
+        "HIDDEN_MODELS=open_router/meta/hidden\n",
+        encoding="utf-8",
+    )
+    app = create_test_app(
+        Settings().model_copy(
+            update={
+                "model": "open_router/meta/old",
+                "open_router_api_key": "open-router-key",
+                "hidden_models": "",
+            }
+        )
+    )
+
+    response = _local_client(app).post("/admin/api/config/reload")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reloaded"] is True
+    assert body["provider"] == "deepseek"
+    assert body["model"] == "deepseek/deepseek-chat"
+    runtime = runtime_for_app(app)
+    assert runtime.settings.model == "deepseek/deepseek-chat"
+    assert runtime.settings.hidden_model_set() == frozenset({"open_router/meta/hidden"})
 
 
 def test_admin_cache_policy_does_not_match_similar_public_paths(monkeypatch, tmp_path):
@@ -1178,6 +1242,7 @@ def test_admin_first_apply_migrates_repo_env(monkeypatch, tmp_path):
         encoding="utf-8",
     )
     app = create_test_app()
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
 
     config = _local_client(app).get("/admin/api/config").json()
     model_field = next(field for field in config["fields"] if field["key"] == "MODEL")

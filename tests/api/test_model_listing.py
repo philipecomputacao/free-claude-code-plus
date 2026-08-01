@@ -11,6 +11,8 @@ def _settings(
     model_fable: str | None = None,
     model_opus: str | None = "open_router/anthropic/claude-opus",
     model_haiku: str | None = "deepseek/deepseek-chat",
+    disabled_providers: str = "",
+    hidden_models: str = "",
 ) -> Settings:
     return Settings.model_construct(
         model=model,
@@ -18,6 +20,8 @@ def _settings(
         model_opus=model_opus,
         model_sonnet=None,
         model_haiku=model_haiku,
+        disabled_providers=disabled_providers,
+        hidden_models=hidden_models,
         anthropic_auth_token="",
         deepseek_api_key="deepseek-key",
         open_router_api_key="open-router-key",
@@ -113,6 +117,31 @@ def test_models_list_uses_cached_metadata_for_configured_refs():
     ids = [item["id"] for item in response.json()["data"]]
     assert "anthropic/open_router/plain-model" not in ids
     assert ids[0] == "claude-3-freecc-no-thinking/open_router/plain-model"
+
+
+def test_models_list_excludes_disabled_provider_refs():
+    app = create_test_app(_settings(disabled_providers="open_router"))
+    _cache_models(app, "deepseek", "deepseek-chat")
+    _cache_models(app, "open_router", "meta/llama-3.3")
+
+    response = TestClient(app).get("/v1/models")
+
+    ids = [item["id"] for item in response.json()["data"]]
+    assert "anthropic/deepseek/deepseek-chat" in ids
+    assert all("open_router" not in model_id for model_id in ids)
+
+
+def test_models_list_excludes_hidden_discovered_models():
+    app = create_test_app(_settings(hidden_models="open_router/meta/llama-3.3"))
+    _cache_models(app, "open_router", "meta/llama-3.3", "meta/visible")
+
+    response = TestClient(app).get("/v1/models")
+
+    ids = [item["id"] for item in response.json()["data"]]
+    assert "anthropic/open_router/meta/visible" in ids
+    assert "claude-3-freecc-no-thinking/open_router/meta/visible" in ids
+    assert "anthropic/open_router/meta/llama-3.3" not in ids
+    assert "claude-3-freecc-no-thinking/open_router/meta/llama-3.3" not in ids
 
 
 def test_models_list_includes_cached_wafer_models():

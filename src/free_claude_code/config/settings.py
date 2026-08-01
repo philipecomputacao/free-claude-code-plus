@@ -1,8 +1,10 @@
 """Flat application settings schema loaded by Pydantic Settings."""
 
+import os
 from functools import lru_cache
 from typing import Any
 
+from dotenv import dotenv_values
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,6 +15,7 @@ from .env_files import (
     settings_env_files,
 )
 from .nim import NimSettings
+from .paths import managed_env_path
 from .provider_catalog import BEDROCK_DEFAULT_BASE, SUPPORTED_PROVIDER_IDS
 from .reasoning import ReasoningPreference
 
@@ -320,8 +323,16 @@ class Settings(BaseSettings):
         default=None, validation_alias="MAX_MESSAGE_LOG_ENTRIES_PER_CHAT"
     )
 
+    # ==================== Model Visibility ====================
+    # Comma-separated provider ids to exclude from /v1/models.
+    disabled_providers: str = Field(default="", validation_alias="DISABLED_PROVIDERS")
+    # Comma-separated provider/model refs to hide from discovered model listings.
+    hidden_models: str = Field(default="", validation_alias="HIDDEN_MODELS")
+
     # ==================== Server ====================
-    host: str = "0.0.0.0"
+    # Keep the unauthenticated local proxy off the LAN by default. Override with
+    # HOST=0.0.0.0 only when another device must reach this machine.
+    host: str = "127.0.0.1"
     port: int = 8082
     open_admin_browser: bool = Field(default=True, validation_alias="FCC_OPEN_BROWSER")
     # Optional proxy bearer token protecting public API endpoints.
@@ -458,6 +469,22 @@ class Settings(BaseSettings):
             self.anthropic_auth_token = dotenv_value
         return self
 
+    def disabled_provider_set(self) -> frozenset[str]:
+        """Return normalized provider ids excluded from model listings."""
+        return frozenset(
+            provider_id.strip()
+            for provider_id in self.disabled_providers.split(",")
+            if provider_id.strip()
+        )
+
+    def hidden_model_set(self) -> frozenset[str]:
+        """Return provider/model refs hidden from discovered model listings."""
+        return frozenset(
+            model_ref.strip()
+            for model_ref in self.hidden_models.split(",")
+            if model_ref.strip()
+        )
+
     model_config = SettingsConfigDict(
         env_file=settings_env_files(),
         env_file_encoding="utf-8",
@@ -469,3 +496,14 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+
+def reload_settings() -> Settings:
+    """Reload settings after manual edits to the managed ``~/.fcc/.env`` file."""
+    path = managed_env_path()
+    if path.is_file():
+        for key, value in dotenv_values(path).items():
+            if value is not None and str(value).strip():
+                os.environ[key] = str(value)
+    get_settings.cache_clear()
+    return get_settings()

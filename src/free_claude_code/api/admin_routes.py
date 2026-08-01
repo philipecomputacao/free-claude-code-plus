@@ -127,6 +127,16 @@ async def apply_admin_config(
     return result
 
 
+@router.post("/admin/api/config/reload")
+async def reload_admin_config(
+    request: Request,
+    services: ApiServices = Depends(get_services),
+):
+    """Reload manually edited ``~/.fcc/.env`` without restarting the server."""
+    require_loopback_admin(request)
+    return await services.admin.reload_env_settings()
+
+
 @router.get("/admin/api/status")
 async def admin_status(
     request: Request,

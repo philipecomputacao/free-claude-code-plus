@@ -36,7 +36,7 @@ from free_claude_code.config.env_files import (
 from free_claude_code.config.model_refs import parse_provider_type
 from free_claude_code.config.paths import messaging_state_dir_path
 from free_claude_code.config.server_urls import local_admin_url, local_proxy_root_url
-from free_claude_code.config.settings import Settings, get_settings
+from free_claude_code.config.settings import Settings, get_settings, reload_settings
 from free_claude_code.messaging.platforms import factory as messaging_platform_factory
 from free_claude_code.messaging.platforms.factory import MessagingPlatformOptions
 from free_claude_code.messaging.platforms.ports import (
@@ -220,6 +220,28 @@ class ApplicationRuntime:
             )
             self._pending_fields = []
             result["restart"] = self._restart_metadata((), prepared.settings)
+            return result
+
+    async def reload_env_settings(self) -> dict[str, Any]:
+        """Reload manually edited env settings and publish a new provider generation."""
+        async with self._config_lock:
+            settings = reload_settings()
+            result: dict[str, Any] = {"reloaded": True}
+
+            generation_id = await self.provider_manager.replace(
+                settings,
+                commit=lambda: None,
+                reason="manual_env_reload",
+            )
+            self._pending_fields = []
+            result.update(
+                {
+                    "generation_id": generation_id,
+                    "provider": parse_provider_type(settings.model),
+                    "model": settings.model,
+                    "restart": self._restart_metadata((), settings),
+                }
+            )
             return result
 
     def admin_status(self) -> dict[str, Any]:

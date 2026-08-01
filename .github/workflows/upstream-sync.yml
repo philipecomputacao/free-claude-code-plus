@@ -1,0 +1,120 @@
+name: Upstream sync check
+
+on:
+  schedule:
+    # Every Monday 09:00 BRT (UTC-3) = 12:00 UTC.
+    - cron: '0 12 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  upstream-divergence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream + fetch
+        run: |
+          git remote add upstream https://github.com/Alishahryar1/free-claude-code.git
+          git fetch upstream --no-tags main
+
+      - name: Compute divergence
+        id: check
+        run: |
+          UPSTREAM_TIP="$(git rev-parse upstream/main)"
+          LOCAL_TIP="$(git rev-parse HEAD)"
+          BEHIND="$(git rev-list --count "${LOCAL_TIP}..${UPSTREAM_TIP}")"
+          {
+            echo "upstream=${UPSTREAM_TIP}"
+            echo "local=${LOCAL_TIP}"
+            echo "behind=${BEHIND}"
+            if [ "${BEHIND}" -gt 0 ]; then
+              echo "diverged=true"
+              echo "::warning::Upstream is ${BEHIND} commit(s) ahead of our main."
+            else
+              echo "diverged=false"
+              echo "Up to date with upstream."
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build run summary
+        if: always()
+        env:
+          BEHIND: ${{ steps.check.outputs.behind }}
+          LOCAL: ${{ steps.check.outputs.local }}
+          UPSTREAM: ${{ steps.check.outputs.upstream }}
+        run: |
+          {
+            echo "## Upstream sync check"
+            echo
+            echo "- **Local main:** \`${LOCAL}\`"
+            echo "- **Upstream main:** \`${UPSTREAM}\`"
+            echo "- **Behind by:** ${BEHIND} commit(s)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${BEHIND}" -gt 0 ]; then
+            {
+              echo
+              echo "### Upstream commits not in our main"
+              echo
+              echo '```'
+              git log --oneline "HEAD..upstream/main" | head -20
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Open / update issue when diverged
+        if: steps.check.outputs.diverged == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const behind = '${{ steps.check.outputs.behind }}';
+            const repo = context.repo;
+            const label = 'upstream-sync';
+            const upstreamLog = require('child_process')
+              .execSync('git log --oneline HEAD..upstream/main | head -10', { cwd: process.cwd() })
+              .toString()
+              .trim();
+            const body = [
+              `Upstream \`Alishahryar1/free-claude-code\` is **${behind}** commit(s) ahead.`,
+              '',
+              '### Latest upstream commits',
+              '',
+              '```',
+              upstreamLog,
+              '```',
+              '',
+              '### Local sync checklist',
+              '',
+              '1. Create a backup branch/bundle.',
+              '2. Create a sync branch from `upstream/main`.',
+              '3. Re-port fork-only features: model visibility controls, config reload, localhost bind, docs/workflows.',
+              '4. Run `./scripts/ci.sh` plus live MiniMax/OpenCode smoke tests.',
+            ].join('\n');
+            const existing = await github.rest.issues.listForRepo({
+              owner: repo.owner,
+              repo: repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                issue_number: existing.data[0].number,
+                body,
+              });
+              return;
+            }
+            await github.rest.issues.create({
+              owner: repo.owner,
+              repo: repo.repo,
+              title: `Upstream free-claude-code is ${behind} commit(s) ahead`,
+              body,
+              labels: [label, 'maintenance'],
+            });

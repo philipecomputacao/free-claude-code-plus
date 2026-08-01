@@ -174,6 +174,28 @@ _NON_PROVIDER_FIELDS: tuple[ConfigFieldSpec, ...] = (
         description="Select None to use the Default Model for Haiku requests.",
     ),
     ConfigFieldSpec(
+        "DISABLED_PROVIDERS",
+        "Disabled Providers",
+        "models",
+        settings_attr="disabled_providers",
+        description=(
+            "Comma-separated provider ids to hide from /v1/models, "
+            "for example: opencode,openai."
+        ),
+        advanced=True,
+    ),
+    ConfigFieldSpec(
+        "HIDDEN_MODELS",
+        "Hidden Models",
+        "models",
+        settings_attr="hidden_models",
+        description=(
+            "Comma-separated provider/model refs to hide from discovered model "
+            "listings, for example: minimax/MiniMax-M2.5."
+        ),
+        advanced=True,
+    ),
+    ConfigFieldSpec(
         "REASONING_POLICY",
         "Reasoning Policy",
         "reasoning",
@@ -286,7 +308,7 @@ _NON_PROVIDER_FIELDS: tuple[ConfigFieldSpec, ...] = (
         "Server Host",
         "runtime",
         settings_attr="host",
-        default="0.0.0.0",
+        default="127.0.0.1",
         restart_required=True,
     ),
     ConfigFieldSpec(

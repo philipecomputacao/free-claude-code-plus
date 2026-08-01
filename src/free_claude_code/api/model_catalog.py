@@ -83,8 +83,11 @@ def build_models_list_response(
     """Return configured, cached, and compatibility model ids."""
     models: list[ModelResponse] = []
     seen: set[str] = set()
+    disabled_providers = settings.disabled_provider_set()
 
     for ref in configured_chat_model_refs(settings):
+        if ref.provider_id in disabled_providers:
+            continue
         supports_thinking = runtime.cached_model_supports_thinking(
             ref.provider_id, ref.model_id
         )
@@ -95,7 +98,13 @@ def build_models_list_response(
             supports_thinking=supports_thinking,
         )
 
+    hidden_models = settings.hidden_model_set()
     for model_info in runtime.cached_prefixed_model_infos():
+        provider_id = model_info.model_id.split("/", 1)[0]
+        if provider_id in disabled_providers:
+            continue
+        if model_info.model_id in hidden_models:
+            continue
         _append_provider_model_variants(
             models,
             seen,
