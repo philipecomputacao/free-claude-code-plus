@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 import httpx
 
+from core.anthropic import SSEBuilder
 from providers.base import ProviderConfig
 from providers.defaults import CLOUDFLARE_AI_REST_ROOT
 from providers.exceptions import AuthenticationError, ModelListResponseError
@@ -118,14 +119,14 @@ class CloudflareProvider(OpenAIChatTransport):
         )
 
     def _handle_extra_reasoning(
-        self, delta: Any, ledger: Any, *, thinking_enabled: bool
+        self, delta: Any, sse: SSEBuilder, *, thinking_enabled: bool
     ) -> Iterator[str]:
         """Map Cloudflare's ``reasoning`` delta field to Anthropic thinking."""
         reasoning = _cloudflare_reasoning(delta)
         if not thinking_enabled or not reasoning:
             return
-        yield from ledger.ensure_thinking_block()
-        yield ledger.emit_thinking_delta(reasoning)
+        yield from sse.ensure_thinking_block()
+        yield sse.emit_thinking_delta(reasoning)
 
     def _model_list_headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self._api_key}"}
