@@ -22,10 +22,19 @@ Settings.model_config = {**Settings.model_config, "env_file": None}
 
 @pytest.fixture(autouse=True)
 def _isolate_from_dotenv(monkeypatch):
-    """Prevent Pydantic BaseSettings from reading the .env file during tests."""
+    """Prevent Pydantic BaseSettings from reading the .env file during tests.
+
+    Also clears :func:`config.settings.get_settings`'s ``lru_cache`` so a test
+    that mutates ``os.environ`` (e.g. ``monkeypatch.setenv``) and then calls
+    ``get_settings()`` gets a fresh ``Settings`` built against the new env,
+    not the cached instance built by an earlier test.
+    """
     monkeypatch.setattr(
         Settings, "model_config", {**Settings.model_config, "env_file": None}
     )
+    from config.settings import get_settings
+
+    get_settings.cache_clear()
 
 
 @pytest.fixture
