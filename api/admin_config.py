@@ -1171,7 +1171,7 @@ def _load_value_state() -> dict[str, dict[str, Any]]:
                 sources[key] = source
 
     for key in FIELD_BY_KEY:
-        if key in os.environ:
+        if os.environ.get(key):
             values[key] = os.environ[key]
             sources[key] = "process"
 
